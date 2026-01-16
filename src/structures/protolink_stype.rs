@@ -69,7 +69,7 @@ pub struct RegisterRequestStruct {
     s_type: ProtoLinkSType,
     pub name: String,
     pub login: String,
-    pub password_hash_pbkdf2: String,
+    pub password_hash_argon2: String,
     pub password_salt: String,
 }
 

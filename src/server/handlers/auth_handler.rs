@@ -1,17 +1,18 @@
-use crate::db::users_db;
-use crate::db::users_db::{User, UsersDb};
+use crate::server::db::users_db;
+use crate::server::db::users_db::UsersDb;
 use crate::structures::protolink_stype::{
     AuthRequestStruct, AuthResponse, ProtoLinkSType, RegisterRequestStruct,
 };
 use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::MysqlConnection;
 use std::net::{SocketAddr, TcpStream};
-use std::sync::{Arc};
+use std::sync::Arc;
 use tfserver::async_trait::async_trait;
 use tfserver::server::handler::Handler;
 use tfserver::structures::s_type;
 use tfserver::structures::s_type::StructureType;
 use tfserver::structures::traffic_proc::TrafficProcessorHolder;
+use tfserver::structures::transport::Transport;
 use tfserver::tokio::sync::Mutex;
 use tfserver::tokio_util::bytes::BytesMut;
 use tfserver::tokio_util::codec::{Framed, LengthDelimitedCodec};
@@ -30,41 +31,49 @@ impl AuthHandler {
 
     async fn register_request(&self, request: RegisterRequestStruct) -> AuthResponse {
         let mut conn = self.db_connection.lock().await.get().unwrap();
-        let exists = users_db::UsersDb::is_user_exists(&mut conn, request.login.as_str());
-        if exists {
-            return AuthResponse {
-                s_type: ProtoLinkSType::AuthResponse,
-                success: false,
-                message: "User already exists".into(),
-            };
+        if let Ok(exists) = users_db::UsersDb::is_user_exists(&mut conn, request.login.as_str()) {
+            if exists {
+                return AuthResponse {
+                    s_type: ProtoLinkSType::AuthResponse,
+                    success: false,
+                    message: "User already exists".into(),
+                };
+            }
+            if let Ok(res) = UsersDb::create_user(
+                &mut conn,
+                request.login,
+                request.name,
+                request.password_hash_argon2,
+                request.password_salt,
+            ) {
+                return AuthResponse {
+                    s_type: ProtoLinkSType::AuthResponse,
+                    success: true,
+                    message: "".into(),
+                };
+            }
         }
-        let res = UsersDb::create_user(
-            &mut conn,
-            request.login,
-            request.name,
-            request.password_hash_pbkdf2,
-            request.password_salt,
-        );
-        return if res {
-            AuthResponse {
-                s_type: ProtoLinkSType::AuthResponse,
-                success: true,
-                message: "".into(),
-            }
-        } else {
-            AuthResponse {
-                s_type: ProtoLinkSType::AuthResponse,
-                success: false,
-                message: "internal database error".into(),
-            }
-        };
+        AuthResponse {
+            s_type: ProtoLinkSType::AuthResponse,
+            success: false,
+            message: "internal database error".into(),
+        }
     }
 }
 #[async_trait]
 impl Handler for AuthHandler {
+    type Codec = LengthDelimitedCodec;
+
     async fn serve_route(
         &mut self,
-        client_meta: (std::net::SocketAddr, &mut std::option::Option<tfserver::tokio::sync::oneshot::Sender<Arc<tfserver::tokio::sync::Mutex<(dyn Handler + 'static)>>>>),
+        client_meta: (
+            SocketAddr,
+            &mut Option<
+                tfserver::tokio::sync::oneshot::Sender<
+                    Arc<Mutex<(dyn Handler<Codec = LengthDelimitedCodec> + 'static)>>,
+                >,
+            >,
+        ),
         s_type: Box<dyn StructureType>,
         mut data: BytesMut,
     ) -> Result<Vec<u8>, Vec<u8>> {
@@ -99,7 +108,14 @@ impl Handler for AuthHandler {
         }
     }
 
-    async fn accept_stream(&mut self, add: SocketAddr, stream: (Framed<tfserver::tokio::net::TcpStream, LengthDelimitedCodec>, TrafficProcessorHolder)) {
+    async fn accept_stream(
+        &mut self,
+        add: SocketAddr,
+        stream: (
+            Framed<Transport, LengthDelimitedCodec>,
+            TrafficProcessorHolder<LengthDelimitedCodec>,
+        ),
+    ) {
         todo!()
     }
 }

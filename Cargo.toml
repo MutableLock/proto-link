@@ -7,9 +7,14 @@ edition = "2021"
 name = "server"
 path = "src/server_main.rs"
 
+[[bin]]
+name = "client"
+path = "src/client_main.rs"
+
 [dependencies]
 diesel = { version = "2.2.6", features = ["mysql", "time", "r2d2"]}
 dotenvy = "0.15"
-the-fourth-server = { path = "the-fourth-server"}
+the-fourth-server = { git = "https://github.com/MutableLock/the-fourth-server"}
 serde = { version = "1.0", features = ["derive"] }
 num_enum = "0.7"
+argon2-async = "0.2"
