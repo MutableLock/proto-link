@@ -5,7 +5,7 @@ use std::hash::{DefaultHasher, Hash, Hasher};
 use tfserver::structures::s_type::{StrongType, StructureType};
 
 #[repr(u8)]
-#[derive(Serialize, Deserialize, PartialEq, Clone, Hash, Eq, TryFromPrimitive, Copy)]
+#[derive(Serialize, Deserialize, PartialEq, Clone, Hash, Eq, TryFromPrimitive, Copy, Debug)]
 pub enum ProtoLinkSType {
     RegisterRequest,
     AuthRequest,
@@ -69,8 +69,7 @@ pub struct RegisterRequestStruct {
     s_type: ProtoLinkSType,
     pub name: String,
     pub login: String,
-    pub password_hash_argon2: String,
-    pub password_salt: String,
+    pub password_hash_sha256: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -78,9 +77,9 @@ pub struct AuthRequestStruct {
     s_type: ProtoLinkSType,
     pub login: String,
 }
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct AuthResponse {
-    pub(crate) success: bool,
+    pub success: bool,
     pub s_type: ProtoLinkSType,
     pub message: String,
 }
@@ -94,6 +93,17 @@ impl StrongType for AuthResponse{
 impl StrongType for RegisterRequestStruct {
     fn get_s_type(&self) -> &dyn StructureType {
         &self.s_type
+    }
+}
+
+impl RegisterRequestStruct{
+    pub fn new() -> Self {
+        Self{
+            s_type: ProtoLinkSType::RegisterRequest,
+            name: "".to_string(),
+            login: "".to_string(),
+            password_hash_sha256: "".to_string(),
+        }
     }
 }
 

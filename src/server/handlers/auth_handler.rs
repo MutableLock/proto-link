@@ -43,8 +43,7 @@ impl AuthHandler {
                 &mut conn,
                 request.login,
                 request.name,
-                request.password_hash_argon2,
-                request.password_salt,
+                request.password_hash_sha256
             ) {
                 return AuthResponse {
                     s_type: ProtoLinkSType::AuthResponse,

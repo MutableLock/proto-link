@@ -14,8 +14,7 @@ pub struct User {
     pub id: u64,
     pub login: String,
     pub name: String,
-    pub password_hash_argon2: String,
-    pub password_salt: String,
+    pub password_hash: String
 }
 
 impl UsersDb {
@@ -23,8 +22,7 @@ impl UsersDb {
         conn: &mut PooledConnection<ConnectionManager<MysqlConnection>>,
         login: String,
         name: String,
-        argon2: String,
-        salt: String,
+       hash: String
     ) -> Result<usize, DieselError> {
         use crate::server::db::schema::users;
 
@@ -32,8 +30,7 @@ impl UsersDb {
             id: 0,
             login,
             name,
-            password_hash_argon2: argon2,
-            password_salt: salt,
+            password_hash: hash
         };
 
         conn.transaction(|conn| {

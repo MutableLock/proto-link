@@ -2,7 +2,8 @@ use std::sync::Arc;
 use tfserver::client::ClientConnect;
 use tfserver::tokio_util::codec::LengthDelimitedCodec;
 
-mod auth_api;
+pub mod auth_api;
+pub mod api_consumer;
 
 pub async fn init_client_api(
     server_dest: String,

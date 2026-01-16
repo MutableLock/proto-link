@@ -23,7 +23,7 @@ pub async fn main() {
     let auth_handler =Arc::new(Mutex::new( AuthHandler::new(pool.clone())));
     let mut router: TcpServerRouter<LengthDelimitedCodec> = TcpServerRouter::new(Box::new(ProtoLinkSType::AuthResponse));
     router.add_route(auth_handler, "AUTH_HANDLER".to_string(), vec![Box::new(ProtoLinkSType::RegisterRequest), Box::new(ProtoLinkSType::AuthRequest)]);
-
+    router.commit_routes();
 
     let router = Arc::new(router);
     let mut server = TcpServer::new("0.0.0.0:8080".to_string(), router, None, LengthDelimitedCodec::new(), None).await;
