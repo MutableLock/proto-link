@@ -69,7 +69,7 @@ pub struct RegisterRequestStruct {
     s_type: ProtoLinkSType,
     pub name: String,
     pub login: String,
-    pub password_hash_sha256: String,
+    pub password_hash_sha256_hkdf: Vec<u8>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -102,7 +102,7 @@ impl RegisterRequestStruct{
             s_type: ProtoLinkSType::RegisterRequest,
             name: "".to_string(),
             login: "".to_string(),
-            password_hash_sha256: "".to_string(),
+            password_hash_sha256_hkdf: vec![],
         }
     }
 }

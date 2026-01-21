@@ -1,2 +1,3 @@
 pub mod api;
-mod model;
+pub mod client_encrypted_codec;
+pub mod model;

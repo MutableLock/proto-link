@@ -8,6 +8,7 @@ use diesel::MysqlConnection;
 use std::net::{SocketAddr, TcpStream};
 use std::sync::Arc;
 use tfserver::async_trait::async_trait;
+use tfserver::codec::length_delimited::LengthDelimitedCodec;
 use tfserver::server::handler::Handler;
 use tfserver::structures::s_type;
 use tfserver::structures::s_type::StructureType;
@@ -15,7 +16,8 @@ use tfserver::structures::traffic_proc::TrafficProcessorHolder;
 use tfserver::structures::transport::Transport;
 use tfserver::tokio::sync::Mutex;
 use tfserver::tokio_util::bytes::BytesMut;
-use tfserver::tokio_util::codec::{Framed, LengthDelimitedCodec};
+use tfserver::tokio_util::codec::{Framed};
+use crate::server::server_encrypted_codec::ServerEncryptedTrafficProc;
 
 pub struct AuthHandler {
     db_connection: Arc<Mutex<Pool<ConnectionManager<MysqlConnection>>>>,
@@ -43,7 +45,7 @@ impl AuthHandler {
                 &mut conn,
                 request.login,
                 request.name,
-                request.password_hash_sha256
+                request.password_hash_sha256_hkdf
             ) {
                 return AuthResponse {
                     s_type: ProtoLinkSType::AuthResponse,
@@ -61,7 +63,7 @@ impl AuthHandler {
 }
 #[async_trait]
 impl Handler for AuthHandler {
-    type Codec = LengthDelimitedCodec;
+    type Codec = ServerEncryptedTrafficProc;
 
     async fn serve_route(
         &mut self,
@@ -69,7 +71,7 @@ impl Handler for AuthHandler {
             SocketAddr,
             &mut Option<
                 tfserver::tokio::sync::oneshot::Sender<
-                    Arc<Mutex<(dyn Handler<Codec = LengthDelimitedCodec> + 'static)>>,
+                    Arc<Mutex<(dyn Handler<Codec = ServerEncryptedTrafficProc> + 'static)>>,
                 >,
             >,
         ),
@@ -111,8 +113,8 @@ impl Handler for AuthHandler {
         &mut self,
         add: SocketAddr,
         stream: (
-            Framed<Transport, LengthDelimitedCodec>,
-            TrafficProcessorHolder<LengthDelimitedCodec>,
+            Framed<Transport, ServerEncryptedTrafficProc>,
+            TrafficProcessorHolder<ServerEncryptedTrafficProc>,
         ),
     ) {
         todo!()

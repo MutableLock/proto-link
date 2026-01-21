@@ -3,9 +3,9 @@ use crate::structures::protolink_stype::{AuthResponse, ProtoLinkSType, RegisterR
 use std::sync::Arc;
 use tfserver::client::{ClientConnect, ClientRequest, DataRequest, HandlerInfo};
 use tfserver::structures::s_type;
-use tfserver::structures::s_type::{StrongType, StructureType};
-use tfserver::tokio::sync::{oneshot, Mutex};
-use tfserver::tokio::sync::oneshot::{Receiver, Sender};
+use tfserver::structures::s_type::{StructureType};
+use tfserver::tokio::sync::{oneshot};
+use tfserver::tokio::sync::oneshot::{Sender};
 use tfserver::tokio_util::bytes::BytesMut;
 
 pub struct AuthApi {

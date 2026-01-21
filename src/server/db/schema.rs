@@ -7,7 +7,6 @@ diesel::table! {
         login -> Varchar,
         #[max_length = 255]
         name -> Varchar,
-        #[max_length = 255]
-        password_hash -> Varchar,
+        password_hash -> Blob,
     }
 }
