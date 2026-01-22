@@ -16,6 +16,6 @@ pub struct TestReceiver;
 async fn main() {
     let conn = init_client_api( "127.0.0.1:8080".to_string(), "127.0.0.1".to_string()).await;
     let auth_model = AuthModel::new(conn);
-    auth_model.create_user("hello", "hell_nah", "hello_larry!").await;
+    auth_model.create_user("hello", "hell_nah32", "hello32_larry!").await;
     
 }

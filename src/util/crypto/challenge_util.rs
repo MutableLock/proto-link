@@ -1,6 +1,8 @@
-use aes_gcm::{Aes256Gcm, Nonce};
 use aes_gcm::aead::Aead;
+use aes_gcm::{Aes256Gcm, Nonce};
 use rand::{Rng, RngCore};
+use sha2::{Digest, Sha256};
+use subtle::ConstantTimeEq;
 
 /// Generates a random-size challenge and encrypts it using an existing cipher + nonce
 ///
@@ -30,10 +32,7 @@ pub fn generate_challenge(
 }
 
 pub fn verify_challenge(expected_challenge: &[u8], answer: &[u8]) -> bool {
-    for i in 0..expected_challenge.len(){
-        if expected_challenge[i] != answer[i]{
-            return false;
-        }
-    }
-    return true;
+    let hash_one = Sha256::digest(expected_challenge);
+    let hash_two = Sha256::digest(answer);
+    hash_one.ct_eq(&hash_two).into()
 }

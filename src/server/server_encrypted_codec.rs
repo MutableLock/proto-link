@@ -1,9 +1,15 @@
 use crate::server::db::users_db::UsersDb;
 
+use crate::util::crypto::challenge_util::{generate_challenge, verify_challenge};
+use crate::util::crypto::codec_util::{
+    derive_handshake_key, derive_traffic_key, make_nonce, CryptoState, NONCE_CLIENT_TO_SERVER,
+    NONCE_SERVER_TO_CLIENT,
+};
 use aes_gcm::aead::consts::U12;
 use aes_gcm::aead::generic_array::GenericArray;
 use aes_gcm::aead::Aead;
-use aes_gcm::{Aes256Gcm, KeyInit, Nonce};
+use aes_gcm::aes::Aes256;
+use aes_gcm::{Aes256Gcm, AesGcm, KeyInit, Nonce};
 use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::MysqlConnection;
 use hkdf::Hkdf;
@@ -17,8 +23,6 @@ use tfserver::structures::transport::Transport;
 use tfserver::tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tfserver::tokio_util::bytes::{Bytes, BytesMut};
 use tfserver::tokio_util::codec::{Decoder, Encoder, LengthDelimitedCodec};
-use crate::util::crypto::challenge_util::{generate_challenge, verify_challenge};
-use crate::util::crypto::codec_util::{derive_handshake_key, derive_traffic_key, make_nonce, CryptoState, NONCE_CLIENT_TO_SERVER, NONCE_SERVER_TO_CLIENT};
 #[derive(Clone)]
 pub struct ServerEncryptedTrafficProc {
     pool: Pool<ConnectionManager<MysqlConnection>>,
@@ -54,7 +58,13 @@ impl TfCodec for ServerEncryptedTrafficProc {
         };
 
         let key = derive_handshake_key(user.password_hash.as_slice());
-        let cipher = Aes256Gcm::new_from_slice(&key).unwrap();
+        let cipher = match Aes256Gcm::new_from_slice(&key) {
+            Ok(res) => res,
+            Err(err) => {
+                eprintln!("{}", err.to_string());
+                return false;
+            }
+        };
 
         let mut nonce = [0u8; 12];
         rand::rng().fill_bytes(&mut nonce);
@@ -135,15 +145,12 @@ async fn exchange_traffic_nonces(transport: &mut Transport) -> Option<([u8; 12],
     Some((client_nonce, server_nonce))
 }
 
-
 fn make_challenge_message(nonce: [u8; 12], challenge: Vec<u8>) -> [u8; 144] {
     let mut res = [0u8; 144];
     res[..132].copy_from_slice(&challenge.as_slice()[..132]);
     res[132..].copy_from_slice(&nonce);
     res
 }
-
-
 
 impl Decoder for ServerEncryptedTrafficProc {
     type Item = BytesMut;
@@ -161,7 +168,7 @@ impl Decoder for ServerEncryptedTrafficProc {
             return Ok(None);
         };
 
-        let nonce = make_nonce(*recv_ctr, NONCE_SERVER_TO_CLIENT);
+        let nonce = make_nonce(*recv_ctr, NONCE_CLIENT_TO_SERVER);
         *recv_ctr += 1;
 
         let decrypted = cipher
@@ -183,7 +190,7 @@ impl Encoder<Bytes> for ServerEncryptedTrafficProc {
             return Err(io::Error::new(io::ErrorKind::BrokenPipe, "broken pipe"));
         };
 
-        let nonce = make_nonce(*send_ctr, NONCE_CLIENT_TO_SERVER);
+        let nonce = make_nonce(*send_ctr, NONCE_SERVER_TO_CLIENT);
         *send_ctr += 1;
 
         let encrypted = cipher

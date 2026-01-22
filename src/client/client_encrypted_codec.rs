@@ -54,7 +54,13 @@ impl TfCodec for ClientEncryptedCodec {
 
         // 3. Setup handshake cipher
         let handshake_key = derive_handshake_key(self.password_hash.as_slice());
-        let cipher = Aes256Gcm::new_from_slice(&handshake_key).unwrap();
+        let cipher = match Aes256Gcm::new_from_slice(&handshake_key){
+            Ok(res) => res,
+            Err(err) => {
+                eprintln!("{}", err.to_string());
+                return false;
+            }
+        };
 
         // 4. Decrypt challenge
         let plaintext = match cipher.decrypt(Nonce::from_slice(&nonce), ciphertext.as_ref()) {
@@ -123,7 +129,7 @@ impl Decoder for ClientEncryptedCodec {
             return Ok(None);
         };
 
-        let nonce = make_nonce(*recv_ctr, NONCE_CLIENT_TO_SERVER);
+        let nonce = make_nonce(*recv_ctr, NONCE_SERVER_TO_CLIENT);
         *recv_ctr += 1;
 
         let decrypted = cipher
@@ -145,7 +151,7 @@ impl Encoder<Bytes> for ClientEncryptedCodec {
             return Err(io::Error::new(io::ErrorKind::BrokenPipe, "broken pipe"));
         };
 
-        let nonce = make_nonce(*send_ctr, NONCE_SERVER_TO_CLIENT);
+        let nonce = make_nonce(*send_ctr, NONCE_CLIENT_TO_SERVER);
         *send_ctr += 1;
 
         let encrypted = cipher
