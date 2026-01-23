@@ -11,7 +11,6 @@ use tfserver::tokio::sync::Mutex;
 use tfserver::tokio::sync::oneshot::Sender;
 use tfserver::tokio_util::bytes::BytesMut;
 use tfserver::tokio_util::codec::Framed;
-use crate::server::handlers::auth_handler::AuthHandler;
 use crate::server::server_encrypted_codec::ServerEncriptedCodec;
 use crate::structures::protolink_stype::{ChatHandlerResponseStruct, CreateChatRequestStruct};
 
@@ -26,7 +25,7 @@ impl ChatHandler {
     }
     
     async fn create_chat_request(req: CreateChatRequestStruct) -> ChatHandlerResponseStruct {
-        
+        ChatHandlerResponseStruct{}
     }
 }
 

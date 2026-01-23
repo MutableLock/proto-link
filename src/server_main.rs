@@ -1,4 +1,4 @@
-use crate::server::handlers::auth_handler::AuthHandler;
+use crate::server::handlers::register_handler::AuthHandler;
 use crate::server::handlers::chat_handler::ChatHandler;
 use crate::server::server_encrypted_codec::ServerEncriptedCodec;
 use crate::structures::protolink_stype::ProtoLinkSType;
@@ -28,10 +28,9 @@ async fn init_auth_server(
         TcpServerRouter::new(Box::new(ProtoLinkSType::AuthResponse));
     router.add_route(
         auth_handler,
-        "AUTH_HANDLER".to_string(),
+        "REGISTER_HANDLER".to_string(),
         vec![
             Box::new(ProtoLinkSType::RegisterRequest),
-            Box::new(ProtoLinkSType::AuthRequest),
         ],
     );
     router.commit_routes();

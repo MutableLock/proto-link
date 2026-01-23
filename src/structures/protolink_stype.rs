@@ -12,6 +12,7 @@ pub enum ProtoLinkSType {
     AuthResponse,
     CreateChat,
     ChatHandlerResponse,
+    AuthChallenge
 }
 
 impl ProtoLinkSType {
@@ -33,6 +34,7 @@ impl StructureType for ProtoLinkSType {
             Self::AuthResponse => TypeId::of::<AuthResponse>(),
             Self::CreateChat => TypeId::of::<CreateChatRequestStruct>(),
             Self::ChatHandlerResponse => TypeId::of::<ChatHandlerResponseStruct>(),
+            Self::AuthChallenge => TypeId::of::<AuthChallenge>(),
         }
     }
 
@@ -86,6 +88,14 @@ pub struct RegisterRequestStruct {
     pub login: String,
     pub password_hash_sha256_hkdf: Vec<u8>,
 }
+#[derive(Serialize, Deserialize)]
+pub struct AuthChallenge {
+    s_type: ProtoLinkSType,
+    pub nonce: [u8; 12],
+    pub challenge: Vec<u8>,
+    pub login: String,
+}
+
 
 #[derive(Serialize, Deserialize)]
 pub struct AuthRequestStruct {
@@ -97,6 +107,17 @@ pub struct AuthResponse {
     pub success: bool,
     pub s_type: ProtoLinkSType,
     pub message: String,
+}
+
+impl AuthChallenge{
+    pub fn new(challenge: Vec<u8>, nonce: [u8;12], login: String) -> Self {
+        Self {
+            s_type: ProtoLinkSType::AuthChallenge,
+            nonce,
+            challenge,
+            login
+        }
+    }
 }
 
 impl StrongType for AuthResponse {
@@ -118,6 +139,12 @@ impl StrongType for CreateChatRequestStruct {
 }
 
 impl StrongType for ChatHandlerResponseStruct {
+    fn get_s_type(&self) -> &dyn StructureType {
+        &self.s_type
+    }
+}
+
+impl StrongType for AuthChallenge {
     fn get_s_type(&self) -> &dyn StructureType {
         &self.s_type
     }

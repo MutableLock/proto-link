@@ -1,6 +1,16 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
+    challenges (id) {
+        id -> Unsigned<Bigint>,
+        challenge -> Blob,
+        solution -> Blob,
+        user_id -> Unsigned<Bigint>,
+        nonce -> Blob,
+    }
+}
+
+diesel::table! {
     chat_roles (id) {
         id -> Unsigned<Bigint>,
     }
@@ -25,6 +35,15 @@ diesel::table! {
 }
 
 diesel::table! {
+    tokens (id) {
+        id -> Unsigned<Bigint>,
+        token -> Unsigned<Bigint>,
+        user_id -> Unsigned<Bigint>,
+        expires_at -> Datetime,
+    }
+}
+
+diesel::table! {
     users (id) {
         id -> Unsigned<Bigint>,
         #[max_length = 255]
@@ -35,9 +54,18 @@ diesel::table! {
     }
 }
 
+diesel::joinable!(challenges -> users (user_id));
 diesel::joinable!(chats -> users (owner_id));
 diesel::joinable!(chats_users -> chat_roles (role_id));
 diesel::joinable!(chats_users -> chats (chat_id));
 diesel::joinable!(chats_users -> users (user_id));
+diesel::joinable!(tokens -> users (user_id));
 
-diesel::allow_tables_to_appear_in_same_query!(chat_roles, chats, chats_users, users,);
+diesel::allow_tables_to_appear_in_same_query!(
+    challenges,
+    chat_roles,
+    chats,
+    chats_users,
+    tokens,
+    users,
+);

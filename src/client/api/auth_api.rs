@@ -16,7 +16,7 @@ pub struct AuthApi {
 impl AuthApi {
     pub fn new(conn: Arc<ClientConnect>) -> Self {
         Self {
-            handler_info: HandlerInfo::new_named("AUTH_HANDLER".to_string()),
+            handler_info: HandlerInfo::new_named("REGISTER_HANDLER".to_string()),
             conn
            ,
         }
