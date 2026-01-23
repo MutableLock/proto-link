@@ -17,7 +17,6 @@ use tfserver::structures::transport::Transport;
 use tfserver::tokio::sync::Mutex;
 use tfserver::tokio_util::bytes::BytesMut;
 use tfserver::tokio_util::codec::{Framed};
-use crate::server::server_encrypted_codec::ServerEncryptedTrafficProc;
 
 pub struct AuthHandler {
     db_connection: Arc<Mutex<Pool<ConnectionManager<MysqlConnection>>>>,
@@ -63,7 +62,7 @@ impl AuthHandler {
 }
 #[async_trait]
 impl Handler for AuthHandler {
-    type Codec = ServerEncryptedTrafficProc;
+    type Codec = LengthDelimitedCodec;
 
     async fn serve_route(
         &mut self,
@@ -71,7 +70,7 @@ impl Handler for AuthHandler {
             SocketAddr,
             &mut Option<
                 tfserver::tokio::sync::oneshot::Sender<
-                    Arc<Mutex<(dyn Handler<Codec = ServerEncryptedTrafficProc> + 'static)>>,
+                    Arc<Mutex<(dyn Handler<Codec = LengthDelimitedCodec> + 'static)>>,
                 >,
             >,
         ),
@@ -113,8 +112,8 @@ impl Handler for AuthHandler {
         &mut self,
         add: SocketAddr,
         stream: (
-            Framed<Transport, ServerEncryptedTrafficProc>,
-            TrafficProcessorHolder<ServerEncryptedTrafficProc>,
+            Framed<Transport, LengthDelimitedCodec>,
+            TrafficProcessorHolder<LengthDelimitedCodec>,
         ),
     ) {
         todo!()

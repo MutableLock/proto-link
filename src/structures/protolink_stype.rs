@@ -10,6 +10,8 @@ pub enum ProtoLinkSType {
     RegisterRequest,
     AuthRequest,
     AuthResponse,
+    CreateChat,
+    ChatHandlerResponse,
 }
 
 impl ProtoLinkSType {
@@ -29,6 +31,8 @@ impl StructureType for ProtoLinkSType {
             Self::RegisterRequest => TypeId::of::<RegisterRequestStruct>(),
             Self::AuthRequest => TypeId::of::<AuthRequestStruct>(),
             Self::AuthResponse => TypeId::of::<AuthResponse>(),
+            Self::CreateChat => TypeId::of::<CreateChatRequestStruct>(),
+            Self::ChatHandlerResponse => TypeId::of::<ChatHandlerResponseStruct>(),
         }
     }
 
@@ -63,6 +67,17 @@ impl StructureType for ProtoLinkSType {
         Box::new(Self::serialize)
     }
 }
+#[derive(Serialize, Deserialize)]
+pub struct ChatHandlerResponseStruct {
+    s_type: ProtoLinkSType,
+    success: bool,
+    message: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct CreateChatRequestStruct {
+    s_type: ProtoLinkSType,
+}
 
 #[derive(Serialize, Deserialize)]
 pub struct RegisterRequestStruct {
@@ -84,7 +99,7 @@ pub struct AuthResponse {
     pub message: String,
 }
 
-impl StrongType for AuthResponse{
+impl StrongType for AuthResponse {
     fn get_s_type(&self) -> &dyn StructureType {
         &self.s_type
     }
@@ -96,9 +111,21 @@ impl StrongType for RegisterRequestStruct {
     }
 }
 
-impl RegisterRequestStruct{
+impl StrongType for CreateChatRequestStruct {
+    fn get_s_type(&self) -> &dyn StructureType {
+        &self.s_type
+    }
+}
+
+impl StrongType for ChatHandlerResponseStruct {
+    fn get_s_type(&self) -> &dyn StructureType {
+        &self.s_type
+    }
+}
+
+impl RegisterRequestStruct {
     pub fn new() -> Self {
-        Self{
+        Self {
             s_type: ProtoLinkSType::RegisterRequest,
             name: "".to_string(),
             login: "".to_string(),

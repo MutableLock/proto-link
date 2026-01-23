@@ -1,0 +1,4 @@
+-- Your SQL goes here
+CREATE TABLE chat_roles(
+    id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT
+);

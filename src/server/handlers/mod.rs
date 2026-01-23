@@ -1,2 +1,2 @@
 pub mod auth_handler;
-mod chat_handler;
+pub mod chat_handler;

@@ -17,8 +17,8 @@ pub async fn init_client_api(
     let mut key = [0u8; 32];
     hk.expand(b"aes-256-key", &mut key).unwrap();
 
-    let codec = ClientEncryptedCodec::new("la11y".parse().unwrap(), key.to_vec());
+  //  let codec = ClientEncryptedCodec::new("la11y".parse().unwrap(), key.to_vec());
 
-    let client = ClientConnect::new(server_name, server_dest, None, codec, None, 16).await.unwrap();
+    let client = ClientConnect::new(server_name, server_dest, None, LengthDelimitedCodec::new(), None, 16).await.unwrap();
     Arc::new(client)
 }
