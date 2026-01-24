@@ -1,7 +1,10 @@
-use chrono::NaiveDateTime;
+use chrono::{NaiveDateTime, Utc};
 use diesel::{AsChangeset, Connection, ExpressionMethods, Insertable, MysqlConnection, QueryDsl, Queryable, RunQueryDsl, Selectable};
 use diesel::r2d2::{ConnectionManager, PooledConnection};
 use diesel::result::Error as DieselError;
+// ... existing code ...
+use rand::rngs::OsRng;
+use rand::RngCore;
 
 pub struct TokensDb;
 
@@ -19,22 +22,41 @@ impl TokensDb {
     pub fn create_token(
         conn: &mut PooledConnection<ConnectionManager<MysqlConnection>>,
         user_id: u64,
-        token_value: u64,
         expires_at_value: NaiveDateTime,
-    ) -> Result<usize, DieselError> {
+    ) -> Result<u64, DieselError> {
         use crate::server::db::schema::tokens;
 
-        let row = TokenRow {
-            id: 0,
-            token: token_value,
-            user_id,
-            expires_at: expires_at_value,
-        };
+        const MAX_ATTEMPTS: usize = 32;
 
         conn.transaction(|conn| {
-            diesel::insert_into(tokens::table)
-                .values(&row)
-                .execute(conn)
+            for _ in 0..MAX_ATTEMPTS {
+                let mut token_value = rand::rng().next_u64();
+                if token_value == 0 {
+                    token_value = 1;
+                }
+
+                let row = TokenRow {
+                    id: 0,
+                    token: token_value,
+                    user_id,
+                    expires_at: expires_at_value,
+                };
+
+                match diesel::insert_into(tokens::table).values(&row).execute(conn) {
+                    Ok(_) => return Ok(token_value),
+                    Err(DieselError::DatabaseError(
+                            diesel::result::DatabaseErrorKind::UniqueViolation,
+                            _,
+                        )) => {
+                        // token collision, retry
+                        continue;
+                    }
+                    Err(e) => return Err(e),
+                }
+            }
+
+        //    let _ = Self::delete_expired(conn, Utc::now().naive_utc());
+            Err(DieselError::RollbackTransaction)
         })
     }
 
